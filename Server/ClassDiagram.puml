@@ -1,0 +1,208 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+package "Server" {
+
+  ' Модели
+  class Client {
+    -id: int
+    -fullName: String
+    -birthDate: LocalDate
+    -gender: String
+    -phone: String
+    -email: String
+    -address: String
+    -monthlyIncome: BigDecimal
+    -employmentStatus: String
+    -workplace: String
+    -assets: String
+    -passportNumber: String
+    -passportIssueDate: LocalDate
+    -passportExpiryDate: LocalDate
+    -passportIssuingCountry: String
+    +getId(): int
+    +setId(id: int)
+    +getFullName(): String
+    +isEmployed(): boolean
+  }
+
+  class CreditApplication {
+    -id: int
+    -clientId: int
+    -loanAmount: BigDecimal
+    -loanTerm: int
+    -purpose: String
+    -status: String
+    -submissionDate: LocalDate
+    +getId(): int
+    +getClientId(): int
+    +getLoanAmount(): BigDecimal
+  }
+
+  class FinancialInfo {
+    -id: int
+    -clientId: int
+    -creditBalance: BigDecimal
+    -overdueAmount: BigDecimal
+    -openCredits: int
+    -creditInquiries: int
+    -lastUpdated: LocalDate
+    -creditLimit: BigDecimal
+    -creditTypes: String
+    -firstCreditDate: LocalDate
+    +calculatePaymentHistoryScore(): int
+    +calculateDebtAmountScore(): int
+    +calculateCreditHistoryLengthScore(): int
+    +calculateNewCreditsScore(): int
+    +calculateCreditTypesScore(): int
+  }
+
+  class FicoParameter {
+    -id: int
+    -parameterName: String
+    -weightPercentage: int
+    -calculationFormula: String
+    -calculatedValue: Integer
+    -description: String
+    +getId(): int
+    +getWeightPercentage(): int
+  }
+
+  class SecurityLog {
+    -id: int
+    -username: String
+    -action: String
+    -timestamp: Timestamp
+    -details: String
+    +toString(): String
+  }
+
+  class User {
+    -username: String
+    -password: String
+    -role: String
+    +getUsername(): String
+    +getRole(): String
+  }
+
+  ' Контроллеры
+  class AuthController {
+    -dbService: DatabaseService
+    +login(username: String, password: String): String
+    +register(user: User): String
+  }
+
+  class ClientController {
+    -dbService: DatabaseService
+    +addClient(client: Client): String
+    +getAllClients(): List<Client>
+    +getClientById(id: int): Client
+    +updateClient(client: Client): String
+    +deleteClient(id: int): String
+    +searchClients(searchTerm: String): List<Client>
+  }
+
+  class FinancialController {
+    -dbService: DatabaseService
+    -ficoParameterController: FicoParameterController
+    +getAllClients(): List<Client>
+    +getFinancialInfo(clientId: int): FinancialInfo
+    +addFinancialInfo(clientId: int, ...): String
+    +calculateFicoScoreForClient(clientId: int): int
+  }
+
+  class FicoParameterController {
+    -dbService: DatabaseService
+    +addParameter(parameter: FicoParameter): String
+    +getAllParameters(): List<FicoParameter>
+    +resetToDefault(): String
+  }
+
+  class CreditApplicationController {
+    -dbService: DatabaseService
+    +getAllApplications(): List<CreditApplication>
+    +addCreditApplication(clientId: int, ...): String
+    +updateApplicationStatus(id: int, status: String): String
+  }
+
+  class SecurityLogsController {
+    -dbService: DatabaseService
+    +addLog(username: String, action: String, details: String)
+    +getSecurityLogs(userFilter: String, actionFilter: String): List<SecurityLog>
+    +clearOldLogs(days: int): String
+  }
+
+  ' Обработчик
+  class UnifiedClientHandler {
+    -socket: Socket
+    -authController: AuthController
+    -clientController: ClientController
+    -ficoController: FicoParameterController
+    -financialController: FinancialController
+    -creditApplicationController: CreditApplicationController
+    -securityLogsController: SecurityLogsController
+    +run()
+    -handleLogin(parts: List<String>, out: PrintWriter)
+    -handleAddClient(parts: List<String>, out: PrintWriter)
+  }
+
+  ' Сервисы
+  class DatabaseService {
+    -connection: Connection
+    +getConnection(): Connection
+    +close()
+  }
+
+  ' Утилиты
+  class RequestParser {
+    +parseRequest(request: String): List<String>
+  }
+
+  ' Конфигурация
+  class DatabaseConfig {
+    +URL: String
+    +USER: String
+    +PASSWORD: String
+    +PORT: int
+  }
+
+  ' Основной класс
+  class Main {
+    -logger: Logger
+    +main(args: String[])
+  }
+
+  ' Отношения
+  UnifiedClientHandler o--> AuthController
+  UnifiedClientHandler o--> ClientController
+  UnifiedClientHandler o--> FicoParameterController
+  UnifiedClientHandler o--> FinancialController
+  UnifiedClientHandler o--> CreditApplicationController
+  UnifiedClientHandler o--> SecurityLogsController
+  UnifiedClientHandler --> Socket
+
+  AuthController --> User
+  AuthController --> DatabaseService
+  ClientController --> Client
+  ClientController --> DatabaseService
+  FinancialController --> FinancialInfo
+  FinancialController --> Client
+  FinancialController --> FicoParameterController
+  FinancialController --> DatabaseService
+  FicoParameterController --> FicoParameter
+  FicoParameterController --> DatabaseService
+  CreditApplicationController --> CreditApplication
+  CreditApplicationController --> DatabaseService
+  SecurityLogsController --> SecurityLog
+  SecurityLogsController --> DatabaseService
+
+  Main --> DatabaseService
+  Main --> ServerSocket
+  Main --> UnifiedClientHandler
+
+  DatabaseService --> DatabaseConfig
+  FinancialInfo --> Client : clientId
+  CreditApplication --> Client : clientId
+}
+
+@enduml
